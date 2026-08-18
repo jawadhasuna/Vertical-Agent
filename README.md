@@ -1,4 +1,4 @@
-https://vertical-agent.vercel.app
+# https://vertical-agent.vercel.app
 # Vertical Agent — Humanoid Robotics
 
 A vertical RAG agent for humanoid robotics, built on Chroma Cloud vector search and Gemini, with retrieval-gated guardrails restricting it to its knowledge domain — deployed on Next.js and Vercel.
