@@ -146,10 +146,93 @@ export default function ChatWidget() {
             rgba(105, 165, 255, 0.28) 100%
           );
         }
+        /* The launcher's halo lives on a wrapper, not on .lg-bubble itself:
+           backdrop-filter creates a stacking context, so a z-index:-1 pseudo
+           element on the button would be trapped inside its own circle. */
+        .lg-halo {
+          position: relative;
+          display: flex;
+        }
+        .lg-halo::before {
+          content: "";
+          position: absolute;
+          inset: -15px;
+          border-radius: 9999px;
+          pointer-events: none;
+          background: radial-gradient(
+            circle,
+            rgba(125, 200, 255, 0.5) 0%,
+            rgba(125, 200, 255, 0.16) 45%,
+            rgba(125, 200, 255, 0) 70%
+          );
+          opacity: 0;
+          /* opacity + transform only, so this stays on the compositor and
+             never triggers layout or paint while it runs */
+          animation: lg-breathe 3.6s ease-in-out infinite;
+          will-change: opacity, transform;
+        }
+        @keyframes lg-breathe {
+          0%,
+          100% {
+            opacity: 0;
+            transform: scale(0.84);
+          }
+          45% {
+            opacity: 1;
+            transform: scale(1.05);
+          }
+        }
+
+        /* Gloss: a specular band that crosses the bubble, then rests. */
+        .lg-sheen::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          border-radius: inherit;
+          pointer-events: none;
+          background: linear-gradient(
+            115deg,
+            rgba(255, 255, 255, 0) 38%,
+            rgba(255, 255, 255, 0.5) 50%,
+            rgba(255, 255, 255, 0) 62%
+          );
+          transform: translateX(-135%);
+          animation: lg-sheen 3.6s ease-in-out infinite;
+          will-change: transform;
+        }
+        @keyframes lg-sheen {
+          0%,
+          30% {
+            transform: translateX(-135%);
+          }
+          62%,
+          100% {
+            transform: translateX(135%);
+          }
+        }
+
+        /* Once the panel is open the user has found it, so stop waving. */
+        .lg-halo-idle::before,
+        .lg-halo-idle .lg-sheen::after {
+          animation: none;
+          opacity: 0;
+        }
+
         @media (prefers-reduced-motion: reduce) {
           .lg-anim {
             animation: none !important;
             transition: none !important;
+          }
+          /* Keep a steady glow rather than a pulsing one - the point was to
+             make the launcher findable, and that should not depend on motion. */
+          .lg-halo::before {
+            animation: none !important;
+            opacity: 0.4;
+            transform: scale(1);
+          }
+          .lg-sheen::after {
+            animation: none !important;
+            opacity: 0;
           }
         }
       `}</style>
@@ -232,13 +315,15 @@ export default function ChatWidget() {
         )}
 
         {/* Floating bubble */}
-        <button
-          onClick={() => setIsOpen((v) => !v)}
-          aria-label={isOpen ? "Close chat" : "Open chat"}
-          className="lg-bubble lg-anim flex h-14 w-14 items-center justify-center rounded-full text-2xl transition hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/60"
-        >
-          {isOpen ? "✕" : "🤖"}
-        </button>
+        <div className={`lg-halo${isOpen ? " lg-halo-idle" : ""}`}>
+          <button
+            onClick={() => setIsOpen((v) => !v)}
+            aria-label={isOpen ? "Close chat" : "Open chat"}
+            className="lg-bubble lg-sheen lg-anim relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-full text-2xl transition hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/60"
+          >
+            {isOpen ? "✕" : "🤖"}
+          </button>
+        </div>
       </div>
     </>
   );
